@@ -124,5 +124,6 @@
       "^walkontable(.*)$": "<rootDir>/node_modules/handsontable/src/3rdparty/walkontable/src$1",
       "\\.css$": "<rootDir>/test/__mocks__/styleMock.js"
     }
-  }
+  },
+  "typings": "./handsontable.d.ts"
 }
