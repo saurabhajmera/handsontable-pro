@@ -2509,14 +2509,6 @@ handlebars@^4.0.3:
   optionalDependencies:
     uglify-js "^2.6"
 
-handsontable@handsontable/handsontable#develop:
-  version "0.35.0"
-  resolved "https://codeload.github.com/handsontable/handsontable/tar.gz/9043eb7884afbd3b52e9c79e75c34320b46a81b3"
-  dependencies:
-    moment "2.20.1"
-    numbro "1.11.0"
-    pikaday "1.5.1"
-
 har-schema@^1.0.5:
   version "1.0.5"
   resolved "https://registry.yarnpkg.com/har-schema/-/har-schema-1.0.5.tgz#d263135f43307c02c602afc8fe95970c0151369e"
