@@ -22719,7 +22719,7 @@ var Table = function () {
   }, {
     key: 'getRowHeight',
     value: function getRowHeight(sourceRow) {
-      var height = this.wot.wtSettings.settings.rowHeight(sourceRow);
+      var height = this.wot.wtSettings.settings.rowHeight(sourceRow,this);
       var oversizedHeight = this.wot.wtViewport.oversizedRows[sourceRow];
 
       if (oversizedHeight !== void 0) {
