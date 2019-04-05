@@ -1,4 +1,4 @@
-import {rangeEach} from 'handsontable/helpers/number';
+import { rangeEach } from 'handsontable/helpers/number';
 import * as C from 'handsontable/i18n/constants';
 
 export default function showRowItem(hiddenRowsPlugin) {
@@ -8,7 +8,7 @@ export default function showRowItem(hiddenRowsPlugin) {
   return {
     key: 'hidden_rows_show',
     name() {
-      const selection = this.getSelected();
+      const selection = this.getSelectedLast();
       let pluralForm = 0;
 
       if (Array.isArray(selection)) {
@@ -37,9 +37,9 @@ export default function showRowItem(hiddenRowsPlugin) {
       return this.getTranslatedPhrase(C.CONTEXTMENU_ITEMS_SHOW_ROW, pluralForm);
     },
     callback() {
-      let {from, to} = this.getSelectedRange();
-      let start = Math.min(from.row, to.row);
-      let end = Math.max(from.row, to.row);
+      const { from, to } = this.getSelectedRangeLast();
+      const start = Math.min(from.row, to.row);
+      const end = Math.max(from.row, to.row);
 
       if (start === end) {
         if (beforeHiddenRows.length === start) {
@@ -52,7 +52,7 @@ export default function showRowItem(hiddenRowsPlugin) {
         }
 
       } else {
-        rangeEach(start, end, (row) => hiddenRowsPlugin.showRow(row));
+        rangeEach(start, end, row => hiddenRowsPlugin.showRow(row));
       }
 
       this.render();
@@ -60,16 +60,16 @@ export default function showRowItem(hiddenRowsPlugin) {
     },
     disabled: false,
     hidden() {
-      if (!hiddenRowsPlugin.hiddenRows.length || !this.selection.selectedHeader.rows) {
+      if (!hiddenRowsPlugin.hiddenRows.length || !this.selection.isSelectedByRowHeader()) {
         return true;
       }
 
       beforeHiddenRows.length = 0;
       afterHiddenRows.length = 0;
 
-      let {from, to} = this.getSelectedRange();
-      let start = Math.min(from.row, to.row);
-      let end = Math.max(from.row, to.row);
+      const { from, to } = this.getSelectedRangeLast();
+      const start = Math.min(from.row, to.row);
+      const end = Math.max(from.row, to.row);
 
       let hiddenInSelection = false;
 
@@ -77,7 +77,7 @@ export default function showRowItem(hiddenRowsPlugin) {
         let totalRowsLength = this.countSourceRows();
 
         rangeEach(0, totalRowsLength, (i) => {
-          let partedHiddenLength = beforeHiddenRows.length + afterHiddenRows.length;
+          const partedHiddenLength = beforeHiddenRows.length + afterHiddenRows.length;
 
           if (partedHiddenLength === hiddenRowsPlugin.hiddenRows.length) {
             return false;

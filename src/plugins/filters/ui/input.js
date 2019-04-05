@@ -1,6 +1,5 @@
-import {addClass} from 'handsontable/helpers/dom/element';
-import {clone, extend} from 'handsontable/helpers/object';
-import * as C from 'handsontable/i18n/constants';
+import { addClass } from 'handsontable/helpers/dom/element';
+import { clone, extend } from 'handsontable/helpers/object';
 import BaseUI from './_base';
 
 const privatePool = new WeakMap();
@@ -29,8 +28,8 @@ class InputUI extends BaseUI {
    * Register all necessary hooks.
    */
   registerHooks() {
-    this.addLocalHook('click', (event) => this.onClick(event));
-    this.addLocalHook('keyup', (event) => this.onKeyup(event));
+    this.addLocalHook('click', () => this.onClick());
+    this.addLocalHook('keyup', event => this.onKeyup(event));
   }
 
   /**
@@ -38,8 +37,8 @@ class InputUI extends BaseUI {
    */
   build() {
     super.build();
-    let priv = privatePool.get(this);
-    let icon = document.createElement('div');
+    const priv = privatePool.get(this);
+    const icon = document.createElement('div');
 
     priv.input = this._element.firstChild;
 
@@ -59,17 +58,11 @@ class InputUI extends BaseUI {
       return;
     }
 
-    let input = privatePool.get(this).input;
+    const input = privatePool.get(this).input;
 
     input.type = this.options.type;
-    input.placeholder = this.hot.getTranslatedPhrase(this.options.placeholder);
-
-    if (typeof this.options.value === 'string' && this.options.value.startsWith(C.FILTERS_NAMESPACE)) {
-      input.value = this.hot.getTranslatedPhrase(this.options.value);
-
-    } else {
-      input.value = this.options.value;
-    }
+    input.placeholder = this.translateIfPossible(this.options.placeholder);
+    input.value = this.translateIfPossible(this.options.value);
   }
 
   /**
@@ -83,10 +76,8 @@ class InputUI extends BaseUI {
 
   /**
    * OnClick listener.
-   *
-   * @param {Event} event
    */
-  onClick(event) {
+  onClick() {
 
   }
 

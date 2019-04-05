@@ -1,8 +1,9 @@
-import {clone, extend, mixin, objectEach} from 'handsontable/helpers/object';
+import { clone, extend, mixin, objectEach } from 'handsontable/helpers/object';
 import localHooks from 'handsontable/mixins/localHooks';
 import EventManager from 'handsontable/eventManager';
-import {addClass} from 'handsontable/helpers/dom/element';
-import {arrayEach} from 'handsontable/helpers/array';
+import { addClass } from 'handsontable/helpers/dom/element';
+import { arrayEach } from 'handsontable/helpers/array';
+import * as C from 'handsontable/i18n/constants';
 
 const STATE_BUILT = 'built';
 const STATE_BUILDING = 'building';
@@ -107,11 +108,25 @@ class BaseUI {
   }
 
   /**
+   * Translate value if it is possible. It's checked if value belongs to namespace of translated phrases.
+   *
+   * @param {*} value Value which will may be translated.
+   * @returns {*} Translated value if translation was possible, original value otherwise.
+   */
+  translateIfPossible(value) {
+    if (typeof value === 'string' && value.startsWith(C.FILTERS_NAMESPACE)) {
+      return this.hot.getTranslatedPhrase(value);
+    }
+
+    return value;
+  }
+
+  /**
    * Build DOM structure.
    */
   build() {
     const registerEvent = (element, eventName) => {
-      this.eventManager.addEventListener(element, eventName, (event) => this.runLocalHooks(eventName, event, this));
+      this.eventManager.addEventListener(element, eventName, event => this.runLocalHooks(eventName, event, this));
     };
 
     if (!this.buildState) {
@@ -121,23 +136,23 @@ class BaseUI {
       addClass(this._element, this.options.className);
     }
     if (this.options.children.length) {
-      arrayEach(this.options.children, (element) => this._element.appendChild(element.element));
+      arrayEach(this.options.children, element => this._element.appendChild(element.element));
 
     } else if (this.options.wrapIt) {
       const element = document.createElement(this.options.tagName);
 
       objectEach(this.options, (value, key) => {
         if (element[key] !== void 0 && key !== 'className' && key !== 'tagName' && key !== 'children') {
-          element[key] = value;
+          element[key] = this.translateIfPossible(value);
         }
       });
 
       this._element.appendChild(element);
 
-      arrayEach(EVENTS_TO_REGISTER, (eventName) => registerEvent(element, eventName));
+      arrayEach(EVENTS_TO_REGISTER, eventName => registerEvent(element, eventName));
 
     } else {
-      arrayEach(EVENTS_TO_REGISTER, (eventName) => registerEvent(this._element, eventName));
+      arrayEach(EVENTS_TO_REGISTER, eventName => registerEvent(this._element, eventName));
     }
   }
 

@@ -3,7 +3,7 @@
  */
 
 /* Conditions menu */
-.htFiltersConditionsMenu {
+.htFiltersConditionsMenu:not(.htGhostTable) {
   display: none;
   position: absolute;
   z-index: 1070;
@@ -51,7 +51,7 @@
 }
 
 .htFiltersConditionsMenu table tbody tr td.htSeparator {
-  border-top: 1px solid #bbb;
+  border-top: 1px solid #e6e6e6;
   height: 0;
   padding: 0;
 }
@@ -68,7 +68,7 @@
 
 .htFiltersConditionsMenu table tbody tr td .htItemWrapper {
   margin-left: 10px;
-  margin-right: 6px;
+  margin-right: 10px;
 }
 
 .htFiltersConditionsMenu table tbody tr td div span.selected {
@@ -100,6 +100,8 @@
 /* Component action bar */
 .handsontable .htFiltersMenuActionBar {
   text-align: center;
+  padding-top: 10px;
+  padding-bottom: 3px;
 }
 
 /* Component filter by conditional */
@@ -109,11 +111,6 @@
 .handsontable .htFiltersMenuCondition .htUIInput {
   padding: 0 0 5px 0;
 }
-.handsontable .htFiltersMenuCondition .htUIInput input {
-  width: 159px;
-  padding: 4px;
-  margin-left: -4px;
-}
 
 /* Component filter by value */
 .handsontable .htFiltersMenuValue {
@@ -122,10 +119,11 @@
 .handsontable .htFiltersMenuValue .htUIMultipleSelectSearch {
   padding: 0;
 }
+.handsontable .htFiltersMenuCondition .htUIInput input,
 .handsontable .htFiltersMenuValue .htUIMultipleSelectSearch input {
-  width: 159px;
   padding: 4px;
-  margin-left: -4px;
+  box-sizing: border-box;
+  width: 100%;
 }
 
 .htUIMultipleSelect .ht_master .wtHolder {
@@ -138,14 +136,19 @@
   background-color: #d2e0d9;
 }
 
+.handsontable .htUISelectAll {
+  margin-right: 10px;
+}
+
 .handsontable .htUIClearAll, .handsontable .htUISelectAll {
   display: inline-block;
-  margin: 0 5px;
 }
+
 .handsontable .htUIClearAll a, .handsontable .htUISelectAll a {
   color: #3283D8;
   font-size: 12px;
 }
+
 .handsontable .htUISelectionControls {
   text-align: right;
 }
@@ -155,7 +158,6 @@
   vertical-align: middle;
   height: 1em;
 }
-
 
 /* UI elements */
 /* Input */
@@ -179,8 +181,6 @@
 .handsontable .htUIInput.htUIButton {
   cursor: pointer;
   display: inline-block;
-  padding: 3px 4px 7px 4px;
-  width: 60px;
 }
 .handsontable .htUIInput.htUIButton input {
   background-color: #eee;
@@ -190,10 +190,14 @@
   font-size: 11px;
   font-weight: bold;
   height: 19px;
-  width: 42px;
+  min-width: 64px;
 }
 .handsontable .htUIInput.htUIButton input:hover {
   border-color: #b9b9b9;
+}
+
+.handsontable .htUIInput.htUIButtonOK {
+  margin-right: 10px;
 }
 
 .handsontable .htUIInput.htUIButtonOK input {
@@ -209,9 +213,7 @@
 .handsontable .htUISelect {
   cursor: pointer;
   margin-bottom: 7px;
-  padding: 0 2px 0 0;
   position: relative;
-  width: 169px;
 }
 .handsontable .htUISelectCaption {
   background-color: #e8e8e8;
@@ -220,7 +222,10 @@
   font-family: arial, sans-serif;
   font-size: 11px;
   font-weight: bold;
-  padding: 3px 0 3px 10px;
+  padding: 3px 20px 3px 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
 }
 .handsontable .htUISelectCaption:hover {
   background-color: #e8e8e8;
@@ -253,13 +258,16 @@
   border-radius: 2px;
   border: 1px solid #d2d1d1;
   padding: 3px;
-  width: 161px;
 }
 
 .handsontable .htUIRadio {
   display: inline-block;
-  margin: 0 5px 0px 0;
+  margin-right: 5px;
   height: 100%;
+}
+
+.handsontable .htUIRadio:last-child {
+  margin-right: 0;
 }
 
 .handsontable .htUIRadio > input[type=radio] {

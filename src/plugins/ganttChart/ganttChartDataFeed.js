@@ -1,6 +1,7 @@
-import {objectEach, deepClone} from 'handsontable/helpers/object';
-import {arrayEach} from 'handsontable/helpers/array';
-import DateCalculator from './dateCalculator';
+import { objectEach, clone } from 'handsontable/helpers/object';
+import { arrayEach } from 'handsontable/helpers/array';
+import { rangeEach } from 'handsontable/helpers/number';
+import { getAdditionalData, getEndDate, getStartDate, setEndDate, setStartDate } from './utils';
 
 /**
  * This class handles the data-related calculations for the GanttChart plugin.
@@ -30,10 +31,19 @@ class GanttChartDataFeed {
    */
   applyData(data, startDateColumn, endDateColumn, additionalData, asyncUpdates) {
     if (Object.prototype.toString.call(data) === '[object Array]') {
+      if (data.length > 1) {
+        this.chartInstance.alter('insert_row', 0, data.length - 1, `${this.pluginName}.loadData`);
+      }
+
       this.loadData(data);
 
-      // if data is a Handsontable instance (probably not the best way to recognize it)
-    } else if (data.guid) {
+    } else if (data instanceof this.chartInstance.constructor) {
+      const sourceRowCount = data.countRows();
+
+      if (sourceRowCount > 1) {
+        this.chartInstance.alter('insert_row', 0, sourceRowCount - 1, `${this.pluginName}.loadData`);
+      }
+
       this.bindWithHotInstance(data, startDateColumn, endDateColumn, additionalData, asyncUpdates);
     }
   }
@@ -59,11 +69,11 @@ class GanttChartDataFeed {
    */
   bindWithHotInstance(instance, startDateColumn, endDateColumn, additionalData, asyncUpdates) {
     this.hotSource = {
-      instance: instance,
+      instance,
       startColumn: startDateColumn,
       endColumn: endDateColumn,
-      additionalData: additionalData,
-      asyncUpdates: asyncUpdates
+      additionalData,
+      asyncUpdates
     };
 
     this.addSourceHotHooks();
@@ -108,9 +118,9 @@ class GanttChartDataFeed {
    */
   addSourceHotHooks() {
     this.sourceHooks = {
-      afterLoadData: (firstRun) => this.onAfterSourceLoadData(firstRun),
-      afterChange: (changes, source) => this.onAfterSourceChange(changes, source),
-      afterColumnSort: (column, order) => this.onAfterColumnSort(column, order)
+      afterLoadData: () => this.onAfterSourceLoadData(),
+      afterChange: changes => this.onAfterSourceChange(changes),
+      afterColumnSort: () => this.onAfterColumnSort()
     };
 
     this.hotSource.instance.addHook('afterLoadData', this.sourceHooks.afterLoadData);
@@ -146,9 +156,9 @@ class GanttChartDataFeed {
    */
   getDataFromSource(row) {
     let additionalObjectData = {};
-    let hotSource = this.hotSource;
+    const hotSource = this.hotSource;
     let sourceHotRows;
-    let rangeBarData = [];
+    const rangeBarData = [];
 
     if (row === void 0) {
       sourceHotRows = hotSource.instance.getData(0, 0, hotSource.instance.countRows() - 1, hotSource.instance.countCols() - 1);
@@ -160,7 +170,7 @@ class GanttChartDataFeed {
 
     for (let i = row || 0, dataLength = sourceHotRows.length; i < (row ? row + 1 : dataLength); i++) {
       additionalObjectData = {};
-      let currentRow = sourceHotRows[i];
+      const currentRow = sourceHotRows[i];
 
       if (currentRow[hotSource.startColumn] === null || currentRow[hotSource.startColumn] === '') {
         /* eslint-disable no-continue */
@@ -186,17 +196,16 @@ class GanttChartDataFeed {
    * @param {Number} [row] Index of the row which needs updating.
    */
   updateFromSource(row) {
-    let dataFromSource = this.getDataFromSource(row);
+    const dataFromSource = this.getDataFromSource(row);
 
     if (!row && isNaN(row)) {
       this.chartPlugin.clearRangeBars();
       this.chartPlugin.clearRangeList();
     }
 
-    arrayEach(dataFromSource, (bar) => {
-      bar = this.trimRangeIfNeeded(bar);
-      this.chartPlugin.addRangeBar.apply(this.chartPlugin, bar);
-    });
+    this.loadData(dataFromSource);
+
+    this.chartInstance.render();
   }
 
   /**
@@ -221,52 +230,59 @@ class GanttChartDataFeed {
    * ```
    */
   loadData(data) {
+    let allBars = [];
+
     arrayEach(data, (bar, i) => {
-      bar = this.trimRangeIfNeeded(bar);
-      this.chartPlugin.addRangeBar(i, bar.startDate, bar.endDate, bar.additionalData);
+      bar.row = i;
+
+      const bars = this.splitRangeIfNeeded(bar);
+
+      allBars = allBars.concat(bars);
+    });
+
+    arrayEach(allBars, (bar) => {
+      this.chartPlugin.addRangeBar(bar.row, getStartDate(bar), getEndDate(bar), getAdditionalData(bar));
+      delete bar.row;
     });
   }
 
   /**
-   * Trim the dates in the provided range bar, if they exceed the currently processed year.
+   * Split the provided range into maximum-year-long chunks.
    *
-   * @param {Array|Object} bar Range bar data.
-   * @returns {Array}
+   * @param {Object} bar The range bar object.
+   * @returns {Array} An array of slip chunks (or a single-element array, if no splicing occured)
    */
-  trimRangeIfNeeded(bar) {
-    let dateProps = null;
-    if (bar[1]) {
-      dateProps = {
-        startDate: 1,
-        endDate: 2
-      };
-
-    } else {
-      dateProps = {
-        startDate: 'startDate',
-        endDate: 'endDate'
-      };
-    }
-
-    let startDate = new Date(bar[dateProps.startDate]);
-    let endDate = new Date(bar[dateProps.endDate]);
+  splitRangeIfNeeded(bar) {
+    const splitBars = [];
+    const startDate = new Date(getStartDate(bar));
+    const endDate = new Date(getEndDate(bar));
 
     if (typeof startDate === 'string' || typeof endDate === 'string') {
       return false;
     }
 
-    let startYear = startDate.getFullYear();
-    let endYear = endDate.getFullYear();
+    const startYear = startDate.getFullYear();
+    const endYear = endDate.getFullYear();
 
-    if (startYear < this.chartPlugin.currentYear && endYear >= this.chartPlugin.currentYear) {
-      bar[dateProps.startDate] = '01/01/' + this.chartPlugin.currentYear;
+    if (startYear === endYear) {
+      return [bar];
     }
 
-    if (endYear > this.chartPlugin.currentYear && startYear <= this.chartPlugin.currentYear) {
-      bar[dateProps.endDate] = '12/31/' + this.chartPlugin.currentYear;
-    }
+    rangeEach(startYear, endYear, (year) => {
+      const newBar = clone(bar);
 
-    return bar;
+      if (year !== startYear) {
+        setStartDate(newBar, `01/01/${year}`);
+      }
+
+      if (year !== endYear) {
+        setEndDate(newBar, `12/31/${year}`);
+      }
+
+      splitBars.push(newBar);
+    });
+
+    return splitBars;
   }
 
   /**
@@ -274,20 +290,19 @@ class GanttChartDataFeed {
    *
    * @private
    * @param {Array} changes List of changes.
-   * @param {String} source Change source.
    */
-  onAfterSourceChange(changes, source) {
+  onAfterSourceChange(changes) {
     this.asyncCall(() => {
       if (!changes) {
         return;
       }
 
-      let changesByRows = {};
+      const changesByRows = {};
 
       for (let i = 0, changesLength = changes.length; i < changesLength; i++) {
-        let currentChange = changes[i];
-        let row = parseInt(currentChange[0], 10);
-        let col = parseInt(currentChange[1], 10);
+        const currentChange = changes[i];
+        const row = parseInt(currentChange[0], 10);
+        const col = parseInt(currentChange[1], 10);
 
         if (!changesByRows[row]) {
           changesByRows[row] = {};
@@ -297,10 +312,10 @@ class GanttChartDataFeed {
       }
 
       objectEach(changesByRows, (prop, i) => {
-        i = parseInt(i, 10);
+        const row = parseInt(i, 10);
 
-        if (this.chartPlugin.getRangeBarCoordinates(i)) {
-          this.chartPlugin.removeRangeBarByColumn(i, this.chartPlugin.rangeList[i][1]);
+        if (this.chartPlugin.getRangeBarCoordinates(row)) {
+          this.chartPlugin.removeRangeBarByColumn(row, this.chartPlugin.rangeList[row][1]);
         }
 
         this.updateFromSource(i);
@@ -312,10 +327,9 @@ class GanttChartDataFeed {
    * afterLoadData hook callback for the source Handsontable instance.
    *
    * @private
-   * @param firstRun
    */
-  onAfterSourceLoadData(firstRun) {
-    this.asyncCall((firstRun) => {
+  onAfterSourceLoadData() {
+    this.asyncCall(() => {
       this.chartPlugin.removeAllRangeBars();
       this.updateFromSource();
     });
@@ -325,10 +339,8 @@ class GanttChartDataFeed {
    * afterColumnSort hook callback for the source Handsontable instance.
    *
    * @private
-   * @param {Number} column Sorted column.
-   * @param order
    */
-  onAfterColumnSort(column, order) {
+  onAfterColumnSort() {
     this.asyncCall(() => {
       this.chartPlugin.removeAllRangeBars();
       this.updateFromSource();

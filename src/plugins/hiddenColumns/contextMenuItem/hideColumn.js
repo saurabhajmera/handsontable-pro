@@ -1,11 +1,11 @@
-import {rangeEach} from 'handsontable/helpers/number';
+import { rangeEach } from 'handsontable/helpers/number';
 import * as C from 'handsontable/i18n/constants';
 
 export default function hideColumnItem(hiddenColumnsPlugin) {
   return {
     key: 'hidden_columns_hide',
     name() {
-      const selection = this.getSelected();
+      const selection = this.getSelectedLast();
       let pluralForm = 0;
 
       if (Array.isArray(selection)) {
@@ -19,11 +19,11 @@ export default function hideColumnItem(hiddenColumnsPlugin) {
       return this.getTranslatedPhrase(C.CONTEXTMENU_ITEMS_HIDE_COLUMN, pluralForm);
     },
     callback() {
-      let {from, to} = this.getSelectedRange();
-      let start = Math.min(from.col, to.col);
-      let end = Math.max(from.col, to.col);
+      const { from, to } = this.getSelectedRangeLast();
+      const start = Math.min(from.col, to.col);
+      const end = Math.max(from.col, to.col);
 
-      rangeEach(start, end, (column) => hiddenColumnsPlugin.hideColumn(column));
+      rangeEach(start, end, column => hiddenColumnsPlugin.hideColumn(column));
 
       this.render();
       this.view.wt.wtOverlays.adjustElementsSize(true);
@@ -31,7 +31,7 @@ export default function hideColumnItem(hiddenColumnsPlugin) {
     },
     disabled: false,
     hidden() {
-      return !this.selection.selectedHeader.cols;
+      return !this.selection.isSelectedByColumnHeader();
     }
   };
 }
